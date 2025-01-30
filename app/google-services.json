@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "554124554161",
+    "project_id": "p2pstreaming-946e8",
+    "storage_bucket": "p2pstreaming-946e8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554124554161:android:1761dbb1fc15a11d955790",
+        "android_client_info": {
+          "package_name": "com.vz.p2pstreaming"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCo0nR_SqIXUf1Q6DNb5i94C2UKONQzG5g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

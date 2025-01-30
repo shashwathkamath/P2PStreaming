@@ -20,9 +20,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             P2PStreamingTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    StreamingScreen()
+                    StreamingScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainPreview() {
+    P2PStreamingTheme {
+        StreamingScreen()
     }
 }

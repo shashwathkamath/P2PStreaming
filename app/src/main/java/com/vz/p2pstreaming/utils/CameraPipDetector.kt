@@ -2,8 +2,6 @@ package com.vz.p2pstreaming.utils
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.util.Log
 

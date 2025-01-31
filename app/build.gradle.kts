@@ -58,12 +58,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-//    implementation(libs.google.webrtc)
-//    // Firebase Realtime Database (for signaling)
-//    implementation(libs.firebase.database.ktx)
-//
-//// Firebase Authentication (optional, for user management)
-//    implementation(libs.firebase.auth.ktx)
-//    implementation(libs.firebase.analytics)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
 
 }

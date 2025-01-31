@@ -34,7 +34,8 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var pipSupported by remember { mutableStateOf(false) }
     var showAlert by remember { mutableStateOf(false) }
-    var hasCameraPermission by remember { mutableStateOf(false) }
+   var hasCameraPermission by remember { mutableStateOf(false) }
+    var isStreaming by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -51,7 +52,6 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
-
         pipSupported = withContext(Dispatchers.IO) {
             CameraPipDetector(context).isPipSupported()
         }
@@ -62,7 +62,10 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         when {
-            pipSupported && hasCameraPermission -> StreamingControls()
+            pipSupported && hasCameraPermission -> if(isStreaming)CameraPreview(
+                modifier = Modifier.fillMaxSize()
+            ) { surface -> /* Start streaming */ }
+            else StreamingControls{ isStreaming = true }
             !pipSupported -> PipUnsupportedWarning { showAlert = true }
             !hasCameraPermission -> Text("Camera permission required")
         }
@@ -86,16 +89,16 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun StreamingControls() {
+private fun StreamingControls(onStartStreaming: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { /* Start Streaming */ }) {
+        Button(onClick = onStartStreaming) {
             Text("Start Streaming")
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { /* Connect & Receive Stream */ }) {
+        Button(onClick = { /* Future: Connect & Receive Stream */ }) {
             Text("Receive Stream")
         }
     }

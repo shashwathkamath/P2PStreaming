@@ -20,17 +20,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun CameraPreview(modifier: Modifier = Modifier, onSurfaceReady: (Surface) -> Unit) {
+fun CameraPreview(
+    modifier: Modifier = Modifier,
+    cameraSelector: CameraSelector, // Allow Front or Back Camera selection
+    onSurfaceReady: (Surface) -> Unit
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     AndroidView(
         modifier = modifier.fillMaxSize(),
-        factory = {
-            ctx ->
+        factory = { ctx ->
             val textureView = TextureView(ctx)
             coroutineScope.launch {
-                startCamera(ctx,textureView,onSurfaceReady)
+                startCamera(ctx, textureView, cameraSelector, onSurfaceReady)
             }
             textureView
         }
@@ -40,24 +43,29 @@ fun CameraPreview(modifier: Modifier = Modifier, onSurfaceReady: (Surface) -> Un
 private suspend fun startCamera(
     context: Context,
     textureView: TextureView,
+    cameraSelector: CameraSelector,
     onSurfaceReady: (Surface) -> Unit
 ) {
     val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-    val cameraProvider = withContext(Dispatchers.IO){cameraProviderFuture.get()}
+    val cameraProvider = withContext(Dispatchers.IO) { cameraProviderFuture.get() }
+
     val preview = Preview.Builder().build().also {
         it.setSurfaceProvider { request ->
             val surfaceTexture: SurfaceTexture = textureView.surfaceTexture ?: return@setSurfaceProvider
             val surface = Surface(surfaceTexture)
             onSurfaceReady(surface)
-            request.provideSurface(surface,ContextCompat.getMainExecutor(context)){
-                result ->
+            request.provideSurface(surface, ContextCompat.getMainExecutor(context)) { result ->
                 Log.d("Camera Preview", "Surface provided: $result")
             }
         }
     }
-    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
     withContext(Dispatchers.Main) {
         cameraProvider.unbindAll()
-        cameraProvider.bindToLifecycle(context as androidx.lifecycle.LifecycleOwner, cameraSelector, preview)
+        cameraProvider.bindToLifecycle(
+            context as androidx.lifecycle.LifecycleOwner,
+            cameraSelector,
+            preview
+        )
     }
 }

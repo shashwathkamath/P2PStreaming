@@ -1,31 +1,22 @@
 package com.vz.p2pstreaming
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.os.Build
+import android.view.Surface
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.vz.p2pstreaming.utils.CameraPipDetector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -34,8 +25,9 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var pipSupported by remember { mutableStateOf(false) }
     var showAlert by remember { mutableStateOf(false) }
-   var hasCameraPermission by remember { mutableStateOf(false) }
+    var hasCameraPermission by remember { mutableStateOf(false) }
     var isStreaming by remember { mutableStateOf(false) }
+    var isDualCameraSupported by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -45,16 +37,17 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
     }
 
     LaunchedEffect(Unit) {
-        hasCameraPermission = ContextCompat.checkSelfPermission(context,
-            Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
+        hasCameraPermission = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
 
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
-        pipSupported = withContext(Dispatchers.IO) {
-            CameraPipDetector(context).isPipSupported()
-        }
+
+        isDualCameraSupported = isCamera2DualSupported(context)
+
+        pipSupported = isPipSupported(context)
     }
 
     Box(
@@ -62,11 +55,22 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         when {
-            pipSupported && hasCameraPermission -> if(isStreaming)CameraPreview(
-                modifier = Modifier.fillMaxSize()
-            ) { surface -> /* Start streaming */ }
-            else StreamingControls{ isStreaming = true }
-            !pipSupported -> PipUnsupportedWarning { showAlert = true }
+            hasCameraPermission -> {
+                if (isStreaming) {
+                    if (isDualCameraSupported) {
+                        DualCameraPreview(modifier = Modifier.fillMaxSize())
+                    } else {
+                        CameraPreview(
+                            modifier = Modifier.fillMaxSize(),
+                            cameraSelector = TODO()
+                        ) { surface ->
+                            // Future: Pass surface to WebRTC for streaming
+                        }
+                    }
+                } else {
+                    StreamingControls { isStreaming = true }
+                }
+            }
             !hasCameraPermission -> Text("Camera permission required")
         }
 
@@ -79,7 +83,7 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
                     else "PiP camera feature not supported on this device"
                 ) },
                 confirmButton = {
-                    TextButton({ showAlert = false }) {
+                    TextButton(onClick = { showAlert = false }) {
                         Text("OK")
                     }
                 }
@@ -104,16 +108,28 @@ private fun StreamingControls(onStartStreaming: () -> Unit) {
     }
 }
 
-@Composable
-private fun PipUnsupportedWarning(onShowAlert: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("PiP Camera Not Supported")
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onShowAlert) {
-            Text("Show Details")
+/** Check if the device supports Camera2 logical multi-camera */
+fun isCamera2DualSupported(context: Context): Boolean {
+    return try {
+        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        for (cameraId in cameraManager.cameraIdList) {
+            val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+            val capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
+            if (capabilities?.contains(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA) == true) {
+                return true
+            }
         }
+        false
+    } catch (e: Exception) {
+        false
+    }
+}
+
+/** Check if Picture-in-Picture mode is supported */
+fun isPipSupported(context: Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+    } else {
+        false
     }
 }

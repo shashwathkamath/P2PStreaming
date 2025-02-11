@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
 @Composable
 fun CameraPreview(modifier: Modifier = Modifier, onSurfaceReady: (Surface) -> Unit, onStopStreaming: () -> Unit) {
     val context = LocalContext.current
@@ -62,18 +63,18 @@ private suspend fun startCamera(
     onSurfaceReady: (Surface) -> Unit
 ) {
     val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-    val cameraProvider = withContext(Dispatchers.IO){cameraProviderFuture.get()}
+    val cameraProvider = withContext(Dispatchers.IO) { cameraProviderFuture.get() }
     val preview = Preview.Builder().build().also {
         it.setSurfaceProvider { request ->
             val surfaceTexture: SurfaceTexture = textureView.surfaceTexture ?: return@setSurfaceProvider
             val surface = Surface(surfaceTexture)
             onSurfaceReady(surface)
-            request.provideSurface(surface,ContextCompat.getMainExecutor(context)){
-                result ->
-                Log.d("Camera Preview", "Surface provided: $result")
+            request.provideSurface(surface, ContextCompat.getMainExecutor(context)) { result ->
+                Log.d("CameraPreview", "Surface provided: $result")
             }
         }
     }
+
     val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     withContext(Dispatchers.Main) {
         cameraProvider.unbindAll()

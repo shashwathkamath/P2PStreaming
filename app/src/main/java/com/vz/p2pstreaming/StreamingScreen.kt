@@ -2,6 +2,8 @@ package com.vz.p2pstreaming
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
+import android.view.Surface
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +66,10 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
             pipSupported && hasCameraPermission -> if (isStreaming) {
                 CameraPreview(
                     modifier = Modifier.fillMaxSize(),
-                    onSurfaceReady = { surface -> /* Start streaming */ },
+                    onSurfaceReady = { surface ->
+                        // Start streaming using the provided surface
+                        startStreaming(surface)
+                    },
                     onStopStreaming = { isStreaming = false }
                 )
             } else {
@@ -92,6 +97,11 @@ fun StreamingScreen(modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+private fun startStreaming(surface: Surface) {
+    // Implement your streaming logic here using the provided surface
+    Log.d("StreamingScreen", "Streaming started with surface: $surface")
 }
 
 @Composable

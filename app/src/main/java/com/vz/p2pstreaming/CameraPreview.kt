@@ -8,9 +8,17 @@ import android.view.TextureView
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -20,21 +28,32 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun CameraPreview(modifier: Modifier = Modifier, onSurfaceReady: (Surface) -> Unit) {
+fun CameraPreview(modifier: Modifier = Modifier, onSurfaceReady: (Surface) -> Unit, onStopStreaming: () -> Unit) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var isStreaming by remember { mutableStateOf(true) }
 
-    AndroidView(
-        modifier = modifier.fillMaxSize(),
-        factory = {
-            ctx ->
-            val textureView = TextureView(ctx)
-            coroutineScope.launch {
-                startCamera(ctx,textureView,onSurfaceReady)
+    Column(modifier = modifier.fillMaxSize()) {
+        AndroidView(
+            modifier = Modifier.weight(1f),
+            factory = { ctx ->
+                val textureView = TextureView(ctx)
+                coroutineScope.launch {
+                    startCamera(ctx, textureView, onSurfaceReady)
+                }
+                textureView
             }
-            textureView
+        )
+        Button(
+            onClick = {
+                isStreaming = false
+                onStopStreaming()
+            },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Stop Streaming")
         }
-    )
+    }
 }
 
 private suspend fun startCamera(
